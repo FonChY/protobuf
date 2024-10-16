@@ -620,6 +620,19 @@ UPB_API_INLINE void upb_Message_SetBaseFieldFloat(struct upb_Message* msg,
   upb_Message_SetBaseField(msg, f, &value);
 }
 
+// TMP - yo remove this b4 submit
+UPB_API_INLINE int32_t upb_Message_GetExtensionInt32(
+    const struct upb_Message* msg, const upb_MiniTableExtension* e,
+    int32_t default_val) {
+  UPB_ASSUME(upb_MiniTableExtension_CType(e) == kUpb_CType_Int32 ||
+             upb_MiniTableExtension_CType(e) == kUpb_CType_Enum);
+  UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableExtension_GetRep)(e) ==
+             kUpb_FieldRep_4Byte);
+  int32_t ret;
+  _upb_Message_GetExtensionField(msg, e, &default_val, &ret);
+  return ret;
+}
+
 UPB_API_INLINE void upb_Message_SetBaseFieldInt32(struct upb_Message* msg,
                                                   const upb_MiniTableField* f,
                                                   int32_t value) {
