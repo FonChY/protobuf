@@ -269,9 +269,9 @@ std::string ClassNameResolver::GetClassName(const Descriptor* descriptor,
 
 std::string ClassNameResolver::GetClassName(const Descriptor* descriptor,
                                             bool immutable, bool kotlin) {
-  return GetClassFullName(
-      ClassNameWithoutPackage(descriptor, immutable), descriptor->file(),
-      immutable, MultipleJavaFiles(descriptor->file(), immutable), kotlin);
+  return GetClassFullName(ClassNameWithoutPackage(descriptor, immutable),
+                          descriptor->file(), immutable,
+                          IsOwnFile(descriptor, immutable), kotlin);
 }
 
 std::string ClassNameResolver::GetClassName(const EnumDescriptor* descriptor,
@@ -281,9 +281,9 @@ std::string ClassNameResolver::GetClassName(const EnumDescriptor* descriptor,
 
 std::string ClassNameResolver::GetClassName(const EnumDescriptor* descriptor,
                                             bool immutable, bool kotlin) {
-  return GetClassFullName(
-      ClassNameWithoutPackage(descriptor, immutable), descriptor->file(),
-      immutable, MultipleJavaFiles(descriptor->file(), immutable), kotlin);
+  return GetClassFullName(ClassNameWithoutPackage(descriptor, immutable),
+                          descriptor->file(), immutable,
+                          IsOwnFile(descriptor, immutable), kotlin);
 }
 
 std::string ClassNameResolver::GetClassName(const ServiceDescriptor* descriptor,
@@ -298,22 +298,25 @@ std::string ClassNameResolver::GetClassName(const ServiceDescriptor* descriptor,
                           IsOwnFile(descriptor, immutable), kotlin);
 }
 
-// Get the Java Class style full name of a message.
+template <typename Descriptor>
 std::string ClassNameResolver::GetJavaClassFullName(
-    absl::string_view name_without_package, const FileDescriptor* file,
+    absl::string_view name_without_package, const Descriptor* descriptor,
     bool immutable) {
-  return GetJavaClassFullName(name_without_package, file, immutable, false);
+  return GetJavaClassFullName(name_without_package, descriptor, immutable,
+                              /*kotlin =*/false);
 }
 
+// Get the Java Class style full name of a message.
+template <typename Descriptor>
 std::string ClassNameResolver::GetJavaClassFullName(
-    absl::string_view name_without_package, const FileDescriptor* file,
+    absl::string_view name_without_package, const Descriptor* descriptor,
     bool immutable, bool kotlin) {
   std::string result;
-  if (MultipleJavaFiles(file, immutable)) {
-    result = FileJavaPackage(file, immutable, options_);
+  if (IsOwnFile(descriptor, immutable)) {
+    result = FileJavaPackage(descriptor->file(), immutable, options_);
     if (!result.empty()) result += '.';
   } else {
-    result = GetClassName(file, immutable, kotlin);
+    result = GetClassName(descriptor->file(), immutable, kotlin);
     if (!result.empty()) result += '$';
   }
   result += absl::StrReplaceAll(name_without_package, {{".", "$"}});
@@ -341,19 +344,19 @@ std::string ClassNameResolver::GetKotlinFactoryName(
 std::string ClassNameResolver::GetJavaImmutableClassName(
     const Descriptor* descriptor) {
   return GetJavaClassFullName(ClassNameWithoutPackage(descriptor, true),
-                              descriptor->file(), true);
+                              descriptor, true);
 }
 
 std::string ClassNameResolver::GetJavaImmutableClassName(
     const EnumDescriptor* descriptor) {
   return GetJavaClassFullName(ClassNameWithoutPackage(descriptor, true),
-                              descriptor->file(), true);
+                              descriptor, true);
 }
 
 std::string ClassNameResolver::GetJavaImmutableClassName(
     const ServiceDescriptor* descriptor) {
   return GetJavaClassFullName(ClassNameWithoutPackage(descriptor, true),
-                              descriptor->file(), true);
+                              descriptor, true);
 }
 
 std::string ClassNameResolver::GetKotlinExtensionsClassName(
@@ -380,19 +383,19 @@ std::string ClassNameResolver::GetKotlinExtensionsClassNameEscaped(
 std::string ClassNameResolver::GetJavaMutableClassName(
     const Descriptor* descriptor) {
   return GetJavaClassFullName(ClassNameWithoutPackage(descriptor, false),
-                              descriptor->file(), false);
+                              descriptor, false);
 }
 
 std::string ClassNameResolver::GetJavaMutableClassName(
     const EnumDescriptor* descriptor) {
   return GetJavaClassFullName(ClassNameWithoutPackage(descriptor, false),
-                              descriptor->file(), false);
+                              descriptor, false);
 }
 
 std::string ClassNameResolver::GetJavaMutableClassName(
     const ServiceDescriptor* descriptor) {
   return GetJavaClassFullName(ClassNameWithoutPackage(descriptor, false),
-                              descriptor->file(), false);
+                              descriptor, false);
 }
 
 std::string ClassNameResolver::GetDowngradedFileClassName(
